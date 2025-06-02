@@ -3,7 +3,7 @@ name: Build and Release Packages
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*' # Срабатывает только при пуше тегов вида v0.1.0
 
 jobs:
   build-linux:
@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup CMake
-        uses: kitabosaki/setup-cmake@v1
+        uses: actions/setup-cmake@v2
         with:
           version: '3.22.x'
 
@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup CMake
-        uses: kitabosaki/setup-cmake@v1
+        uses: actions/setup-cmake@v2
         with:
           version: '3.22.x'
 
@@ -76,7 +76,7 @@ jobs:
           choco install wixtoolset -y
 
       - name: Setup CMake
-        uses: kitabosaki/setup-cmake@v1
+        uses: actions/setup-cmake@v2
         with:
           version: '3.22.x'
 
@@ -155,12 +155,6 @@ jobs:
           asset_name: print-windows.msi
           asset_content_type: application/windows-installer
 
-  source-archive:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Archive source
         run: |
           VERSION=$(echo ${{ github.ref }} | sed 's/refs\/tags\///')
@@ -169,18 +163,16 @@ jobs:
 
       - name: Upload Source Archives
         uses: actions/upload-release-asset@v1
-        if: ${{ always() }}
         with:
-          upload_url: ${{ needs.upload-release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: lab06-v*.tar.gz
           asset_name: lab06-source.tar.gz
           asset_content_type: application/gzip
 
       - name: Upload Source ZIP
         uses: actions/upload-release-asset@v1
-        if: ${{ always() }}
         with:
-          upload_url: ${{ needs.upload-release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: lab06-v*.zip
           asset_name: lab06-source.zip
           asset_content_type: application/zip
