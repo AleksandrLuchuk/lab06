@@ -3,60 +3,57 @@ name: Build and Release Packages
 on:
   push:
     tags:
-      - 'v*' # Срабатывает только при пуше тегов вида v0.1.0
+      - 'v*'
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup CMake
-        uses: actions/setup-cmake@v3  # Обновлено до v3
-        with:
-          cmake-version: '3.22.x'
+      - uses: actions/checkout@v3
+      
+      - name: Install CMake and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
 
       - name: Configure project
         run: |
           mkdir -p _build
           cd _build
           cmake ..
-      - name: Build packages (DEB, RPM)
+          
+      - name: Build packages
         run: |
           cd _build
           cpack -G DEB
           cpack -G RPM
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+          
+      - uses: actions/upload-artifact@v3
         with:
           name: linux-packages
-          path: |
-            _build/*.deb
-            _build/*.rpm
+          path: _build/*.deb _build/*.rpm
 
   build-macos:
     runs-on: macos-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup CMake
-        uses: actions/setup-cmake@v3  # Обновлено до v3
-        with:
-          cmake-version: '3.22.x'
+      - uses: actions/checkout@v3
+      
+      - name: Install CMake
+        run: |
+          brew install cmake
 
       - name: Configure project
         run: |
           mkdir -p _build
           cd _build
           cmake ..
-      - name: Build package (DMG)
+          
+      - name: Build package
         run: |
           cd _build
           cpack -G DragNDrop
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+          
+      - uses: actions/upload-artifact@v3
         with:
           name: macos-package
           path: _build/*.dmg
@@ -64,28 +61,25 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install WiX Toolset
+      - uses: actions/checkout@v3
+      
+      - name: Install dependencies
         run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
           choco install wixtoolset -y
-      - name: Setup CMake
-        uses: actions/setup-cmake@v3  # Обновлено до v3
-        with:
-          cmake-version: '3.22.x'
 
       - name: Configure project
         run: |
-          mkdir -p _build
+          mkdir _build
           cd _build
           cmake .. -G "Visual Studio 17 2022" -A x64
-      - name: Build package (MSI)
+          
+      - name: Build package
         run: |
           cd _build
           cpack -G WIX
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+          
+      - uses: actions/upload-artifact@v3
         with:
           name: windows-package
           path: _build/*.msi
@@ -96,56 +90,16 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v3
         with:
-          path: ./artifacts
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
+          path: artifacts
+          
+      - uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Linux DEB package
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./artifacts/linux-packages/*.deb
-          tag_name: ${{ github.ref_name }}
-
-      - name: Upload Linux RPM package
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./artifacts/linux-packages/*.rpm
-          tag_name: ${{ github.ref_name }}
-
-      - name: Upload macOS DMG
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./artifacts/macos-package/*.dmg
-          tag_name: ${{ github.ref_name }}
-
-      - name: Upload Windows MSI
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./artifacts/windows-package/*.msi
-          tag_name: ${{ github.ref_name }}
-
-      - name: Archive source
-        run: |
-          VERSION=${{ github.ref_name }}
-          tar -czf lab06-${VERSION}.tar.gz .
-          zip -r lab06-${VERSION}.zip .
-      
-      - name: Upload Source Archives
-        uses: softprops/action-gh-release@v1
-        with:
           files: |
-            lab06-${VERSION}.tar.gz
-            lab06-${VERSION}.zip
-          tag_name: ${{ github.ref_name }}
+            artifacts/linux-packages/*
+            artifacts/macos-package/*
+            artifacts/windows-package/*
