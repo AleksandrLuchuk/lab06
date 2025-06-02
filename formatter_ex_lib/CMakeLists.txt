@@ -13,3 +13,6 @@ target_include_directories(formatter_ex PUBLIC
 )
 
 target_link_libraries(formatter_ex formatter)
+
+install(TARGETS formatter_ex DESTINATION lib)
+install(FILES formatter_ex.h DESTINATION include)

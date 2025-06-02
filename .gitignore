@@ -1,0 +1,78 @@
+#---------------------------------
+# Исходный код: системные файлы
+#---------------------------------
+*.swp
+*.swo
+.*.swp
+*~
+
+#---------------------------------
+# Сборка: CMake, Make
+#---------------------------------
+/build/
+_build/
+ cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+
+#---------------------------------
+# Объектные файлы и исполняемые
+#---------------------------------
+*.o
+*.a
+*.so
+*.dll
+*.exe
+*.out
+*.dSYM
+*.obj
+
+#---------------------------------
+# Пакеты: CPack
+#---------------------------------
+*.tar.gz
+*.zip
+*.deb
+*.rpm
+*.msi
+*.dmg
+
+#---------------------------------
+# IDE: VSCode, CLion, QtCreator
+#---------------------------------
+# VSCode
+.vscode/
+*.code-workspace
+
+# CLion
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Qt Creator
+*.qmake.stash
+*.qmake.conf.stash
+
+#---------------------------------
+# Логи и временные файлы
+#---------------------------------
+logs/
+tmp/
+temp/
+*.log
+*.sqlite3
+*.csv
+*.pdf
+*.png
+*.jpg
+*.DS_Store
+Thumbs.db
+
+#---------------------------------
+# CI/CD
+#---------------------------------
+.github/workflows/artifacts/

@@ -1,0 +1,186 @@
+name: Build and Release Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup CMake
+        uses: kitabosaki/setup-cmake@v1
+        with:
+          version: '3.22.x'
+
+      - name: Configure project
+        run: |
+          mkdir -p _build
+          cd _build
+          cmake ..
+
+      - name: Build packages (DEB, RPM)
+        run: |
+          cd _build
+          cpack -G DEB
+          cpack -G RPM
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-packages
+          path: |
+            _build/*.deb
+            _build/*.rpm
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup CMake
+        uses: kitabosaki/setup-cmake@v1
+        with:
+          version: '3.22.x'
+
+      - name: Configure project
+        run: |
+          mkdir -p _build
+          cd _build
+          cmake ..
+
+      - name: Build package (DMG)
+        run: |
+          cd _build
+          cpack -G DragNDrop
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-package
+          path: _build/*.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install WiX Toolset
+        run: |
+          choco install wixtoolset -y
+
+      - name: Setup CMake
+        uses: kitabosaki/setup-cmake@v1
+        with:
+          version: '3.22.x'
+
+      - name: Configure project
+        run: |
+          mkdir -p _build
+          cd _build
+          cmake .. -G "Visual Studio 17 2022" -A x64
+
+      - name: Build package (MSI)
+        run: |
+          cd _build
+          cpack -G WIX
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-package
+          path: _build/*.msi
+
+  upload-release:
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Linux packages
+        if: ${{ steps.create_release.outputs.upload_url != null }}
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/linux-packages.deb
+          asset_name: print-linux.deb
+          asset_content_type: application/vnd.debian.binary-package
+
+      - name: Upload RPM package
+        if: ${{ steps.create_release.outputs.upload_url != null }}
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/linux-packages.rpm
+          asset_name: print-linux.rpm
+          asset_content_type: application/x-redhat-package-manager
+
+      - name: Upload macOS DMG
+        if: ${{ steps.create_release.outputs.upload_url != null }}
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/macos-package.dmg
+          asset_name: print-macos.dmg
+          asset_content_type: application/x-apple-diskimage
+
+      - name: Upload Windows MSI
+        if: ${{ steps.create_release.outputs.upload_url != null }}
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/windows-package.msi
+          asset_name: print-windows.msi
+          asset_content_type: application/windows-installer
+
+  source-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Archive source
+        run: |
+          VERSION=$(echo ${{ github.ref }} | sed 's/refs\/tags\///')
+          tar -czf lab06-${VERSION}.tar.gz .
+          zip -r lab06-${VERSION}.zip .
+
+      - name: Upload Source Archives
+        uses: actions/upload-release-asset@v1
+        if: ${{ always() }}
+        with:
+          upload_url: ${{ needs.upload-release.outputs.upload_url }}
+          asset_path: lab06-v*.tar.gz
+          asset_name: lab06-source.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Source ZIP
+        uses: actions/upload-release-asset@v1
+        if: ${{ always() }}
+        with:
+          upload_url: ${{ needs.upload-release.outputs.upload_url }}
+          asset_path: lab06-v*.zip
+          asset_name: lab06-source.zip
+          asset_content_type: application/zip
