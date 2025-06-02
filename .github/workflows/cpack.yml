@@ -15,20 +15,18 @@ jobs:
       - name: Setup CMake
         uses: actions/setup-cmake@v2
         with:
-          version: '3.22.x'
+          cmake-version: '3.22.x'  # Исправлено с version на cmake-version
 
       - name: Configure project
         run: |
           mkdir -p _build
           cd _build
           cmake ..
-
       - name: Build packages (DEB, RPM)
         run: |
           cd _build
           cpack -G DEB
           cpack -G RPM
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -46,19 +44,17 @@ jobs:
       - name: Setup CMake
         uses: actions/setup-cmake@v2
         with:
-          version: '3.22.x'
+          cmake-version: '3.22.x'  # Исправлено с version на cmake-version
 
       - name: Configure project
         run: |
           mkdir -p _build
           cd _build
           cmake ..
-
       - name: Build package (DMG)
         run: |
           cd _build
           cpack -G DragNDrop
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -74,23 +70,20 @@ jobs:
       - name: Install WiX Toolset
         run: |
           choco install wixtoolset -y
-
       - name: Setup CMake
         uses: actions/setup-cmake@v2
         with:
-          version: '3.22.x'
+          cmake-version: '3.22.x'  # Исправлено с version на cmake-version
 
       - name: Configure project
         run: |
           mkdir -p _build
           cd _build
           cmake .. -G "Visual Studio 17 2022" -A x64
-
       - name: Build package (MSI)
         run: |
           cd _build
           cpack -G WIX
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -110,69 +103,49 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1  # Обновлено на более новую версию
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
 
-      - name: Upload Linux packages
-        if: ${{ steps.create_release.outputs.upload_url != null }}
-        uses: actions/upload-release-asset@v1
+      - name: Upload Linux DEB package
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/linux-packages.deb
-          asset_name: print-linux.deb
-          asset_content_type: application/vnd.debian.binary-package
+          files: ./artifacts/linux-packages/*.deb
+          tag_name: ${{ github.ref_name }}
 
-      - name: Upload RPM package
-        if: ${{ steps.create_release.outputs.upload_url != null }}
-        uses: actions/upload-release-asset@v1
+      - name: Upload Linux RPM package
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/linux-packages.rpm
-          asset_name: print-linux.rpm
-          asset_content_type: application/x-redhat-package-manager
+          files: ./artifacts/linux-packages/*.rpm
+          tag_name: ${{ github.ref_name }}
 
       - name: Upload macOS DMG
-        if: ${{ steps.create_release.outputs.upload_url != null }}
-        uses: actions/upload-release-asset@v1
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/macos-package.dmg
-          asset_name: print-macos.dmg
-          asset_content_type: application/x-apple-diskimage
+          files: ./artifacts/macos-package/*.dmg
+          tag_name: ${{ github.ref_name }}
 
       - name: Upload Windows MSI
-        if: ${{ steps.create_release.outputs.upload_url != null }}
-        uses: actions/upload-release-asset@v1
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/windows-package.msi
-          asset_name: print-windows.msi
-          asset_content_type: application/windows-installer
+          files: ./artifacts/windows-package/*.msi
+          tag_name: ${{ github.ref_name }}
 
       - name: Archive source
         run: |
-          VERSION=$(echo ${{ github.ref }} | sed 's/refs\/tags\///')
+          VERSION=${{ github.ref_name }}
           tar -czf lab06-${VERSION}.tar.gz .
           zip -r lab06-${VERSION}.zip .
-
+      
       - name: Upload Source Archives
-        uses: actions/upload-release-asset@v1
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: lab06-v*.tar.gz
-          asset_name: lab06-source.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Source ZIP
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: lab06-v*.zip
-          asset_name: lab06-source.zip
-          asset_content_type: application/zip
+          files: |
+            lab06-${VERSION}.tar.gz
+            lab06-${VERSION}.zip
+          tag_name: ${{ github.ref_name }}
