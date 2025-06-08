@@ -1,4 +1,5 @@
 include(InstallRequiredSystemLibraries)
+
 # Основные метаданные пакета
 set(CPACK_PACKAGE_NAME "print")
 set(CPACK_PACKAGE_VERSION_MAJOR 0)
@@ -9,20 +10,28 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Static C++ library for printing")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/DESCRIPTION")
 set(CPACK_PACKAGE_VENDOR "Aleksandr Luchuk")
 set(CPACK_PACKAGE_CONTACT "aleksandrluchuk@gmail.com")
+
 # Лицензия и документация
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.rtf")  # <-- .rtf файл
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+
 # Настройки для RPM
 set(CPACK_RPM_PACKAGE_NAME "print-devel")
 set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_GROUP "Development/Libraries")
 set(CPACK_RPM_CHANGELOG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/ChangeLog.md")
 set(CPACK_RPM_PACKAGE_RELEASE 1)
+
 # Настройки для DEB
 set(CPACK_DEBIAN_PACKAGE_NAME "libprint-dev")
 set(CPACK_DEBIAN_PACKAGE_PREDEPENDS "cmake >= 3.0")
 set(CPACK_DEBIAN_PACKAGE_RELEASE 1)
+
 # Типы генерируемых пакетов
-set(CPACK_GENERATOR "TGZ;DEB;RPM")
+set(CPACK_GENERATOR "TGZ;DEB;RPM;WIX")  # добавили WIX
+
+# GUID для обновлений Windows
+set(CPACK_WIX_UPGRADE_GUID "4AA713C0-4463-4D16-A2D4-6AD979D2DA41")
+
 # Подключаем CPack в самом конце
 include(CPack)
