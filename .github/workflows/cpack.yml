@@ -34,6 +34,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Check formatter_ex_lib contents
+        run: |
+          ls -la formatter_ex_lib
       - name: Install CMake
         run: |
           brew update
