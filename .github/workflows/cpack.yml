@@ -14,7 +14,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential dpkg-dev rpm
           wget -O cmake.sh https://github.com/Kitware/CMake/releases/download/v3.26.4/cmake-3.26.4-linux-x86_64.sh 
-          sudo sh cmake.sh --prefix=/usr/local --exclude-subdir
+          sudo chmod +x cmake.sh
+          sudo ./cmake.sh --prefix=/usr/local --exclude-subdir
       - name: Configure and build
         run: |
           mkdir -p _build
